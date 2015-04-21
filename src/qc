@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+### Compiler config
+
+QT_DEFINES="-DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB"
+QT_INCPATHS="-I/usr/lib/qt5/mkspecs/cygwin-g++ -I/usr/include/qt5 -I/usr/include/qt5/QtGui -I/usr/include/qt5/QtCore"
+QT_LIBS="-lQt5Gui -lQt5Core -lGL -lpthread"
+
+DEFINES=$QT_DEFINES
+INCPATHS=$QT_INCPATHS
+LIBS=$QT_LIBS
+
+OPTS="-Wall -Werror=return-type"
+
+## End compiler config
+
+
+top_source=$(readlink -f $1)
+
+shift 1
+
+saved_pwd=$PWD
+
+cache=~/.qc/cache
+
+hostn=`hostname`
+
+project=()
+to_compile=($top_source)
+
+need_link=0
+
+while [ ${#to_compile[@]} -ne 0 ]
+do
+    source=${to_compile[0]}
+    to_compile=(${to_compile[@]:1})
+
+    #echo handling $source
+
+    imports=(`sed -n 's/^ *# *pragma *qc_import *(\(.*\))/\1/p' $source`)
+    imported_sources=(${imports[@]/%/.cpp})
+    imported_headers=(${imports[@]/%/.hpp})
+
+    headers_dquote=(`sed -n 's/^ *# *include *\"\(.*\)\"/\1/p' $source`)
+
+    headers=(${imported_headers[@]} ${headers_dquote[@]})
+
+    object=$cache/$hostn/$source.o
+
+    cd $(dirname $source)
+
+    changed=0
+    if [ $source -nt $object ]
+    then changed=1
+    else
+        for h in "${headers[@]}"
+        do
+            if [ $h -nt $object ]; then changed=1; break; fi
+        done
+    fi
+
+    if [ $changed -ne 0 ]
+    then
+        #opts=$(sed -n 's/^ *# *pragma *qc_gcc *(\(.*\))/\1/p' $pgm)
+
+        output_dir=$(dirname $object)
+        mkdir -p $output_dir
+
+        #echo compiling $source...
+        if ! ( grep -v '^#!' $source | 
+               sed 's/^ *# *pragma *qc_import *(\(.*\))/#include "\1.hpp"/' |
+               g++ -x c++ -c $OPTS $DEFINES $INCPATHS -o $object - )
+        then
+            rm -f $object
+            exit 1
+        fi
+
+        need_link=1
+
+    fi
+
+    project=(${project[@]} $object)
+
+    for s in "${imported_sources[@]}"
+    do
+        s=$(readlink -f $s)
+        to_compile=(${to_compile[@]} $s)
+        # If two (or more) sources import the same
+        # source, then we could check a file more than once.
+        # But we will compile it at most once.
+        # Hopefully, it appearing more than once in 
+        # $project will not affect the link.
+        # Worst case: two sources importing each other.
+        # We would get in an infinite loop.
+    done
+
+done
+
+exe=$cache/$hostn/$top_source.executable
+
+if [[ $need_link -ne 0 || ! -e $exe ]]
+then
+    g++ -o $exe ${project[@]} $LIBS
+fi
+
+cd $saved_pwd
+$exe $*
+
