@@ -10,7 +10,7 @@ DEFINES=$QT_DEFINES
 INCPATHS=$QT_INCPATHS
 LIBS=$QT_LIBS
 
-OPTS="-Wall -Werror=return-type"
+OPTS="-Wall -Werror=return-type -std=gnu++11"
 
 ## End compiler config
 
