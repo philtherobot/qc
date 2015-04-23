@@ -13,6 +13,7 @@ using namespace std;
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
+QTextStream sout(stdout);
 
 class InteractiveProcess : public QProcess
 {
@@ -46,12 +47,6 @@ execute( process, output = 0 )
 execute( input, process, output = 0 )
 */
 
-class Startable
-{
-public:
-    virtual ~Startable() {}
-    virtual void start() = 0;
-};
 
 class Process
 {
@@ -64,12 +59,20 @@ private:
     std::string cmd_;
 };
 
+void throw_if_error(QProcess & proc)
+{
+    if( proc.error() != QProcess::UnknownError )
+        throw std::runtime_error("process error");
+}
+
 void execute(Process & p)
 {
     InteractiveProcess proc;
     proc.setProcessChannelMode(QProcess::ForwardedChannels);
     proc.start(QString::fromStdString(p.cmd()));
+    throw_if_error(proc);
     proc.waitForFinished(-1); // wait forever
+    throw_if_error(proc);
 }
 
 typedef std::vector<Process> ProcessList;
@@ -84,9 +87,7 @@ void execute(ProcessList & pipe)
     
     procs.push_back(new InteractiveProcess);
 
-    ProcessList::iterator it;
-    
-    it = pipe.begin() + 1;
+    auto it = pipe.begin() + 1;
 
     while( it != pipe.end() )
     {
@@ -94,66 +95,71 @@ void execute(ProcessList & pipe)
         ++ it;
     }
 
-    auto pit = procs.begin();
-    auto pprev = 
+    auto pit = procs.begin() + 1;
+    auto pprev = procs.begin();
     
-    while( pit != procs.end() - 1 )
+    while( pit != procs.end() )
     {
-        pit->setProcessOutput( & (*it) );
-        procs.push_back( new QProcess );
-        ++ it;
+        pprev->setStandardOutputProcess( &(*pit) );
+        ++ pit;
+        ++ pprev;
     }
 
-    InteractiveProcess head;
-    QProcess * antecedant = &head;
-
-    ProcessList::iterator prev;
-    prev = it;
+    pprev->setProcessChannelMode(QProcess::ForwardedChannels);
     
-    antecedant->setProcessOutput( & (*it) );
-    antecedant->start( QString::fromStdString(prev->cmd()) );
-    
-    ++ it;
-
-    while( it != pipe.end() )
+    pit = procs.begin();
+    it = pipe.begin();
+    while( pit != procs.end() )
     {
-        antecedant->setProcessOutput( & (*it) );
-        antecedant->start( QString::fromStdString(prev->cmd()) );
-
-        antecedant = it;
-        prev = it;
+        QString cmd = QString::fromStdString(it->cmd());
+        pit->start( cmd );
+        throw_if_error(*pit);
+        ++ pit;
         ++ it;
     }
     
-    antecedant->start( QString::fromStdString(prev->cmd()) );
-
-    head.waitForFinished(-1);
-    
-    it = pipe.begin() + 1;
-    while( it != pipe.end() )
+    pit = procs.begin();
+    while( pit != procs.end() )
     {
-        it->waitForFinished(-1); // wait forever
-        ++it;
+        pit->waitForFinished(-1);
+        throw_if_error(*pit);
+        ++ pit;
     }
 }
 
-int main()
+int user_main()
 {
-    //string text = read_from_subprocess("find .");
-    //cout << text;
-
-    //write_to_subprocess("grep debug",  text);
+    sout << "running sample_source\n";
+    sout.flush();
+    Process f("./sample_source");
+    execute(f);
     
-    Process f("find /home/philt_000/dev");
-    execute( f );
-    
-    Process g("grep objects");
+    sout << "running grep (blocks on stdin)\n";
+    sout.flush();
+    Process g("grep ba");
     execute(g);
     
+    sout << "running a pipe\n";
+    sout.flush();
     ProcessList pl;
     pl.push_back(f);
     pl.push_back(g);
     execute(pl);
     
     return 0;
+}
+
+int main()
+{
+    try
+    {
+        return user_main();
+    }
+    catch(std::exception const & ex)
+    {
+        sout << "exception: " << ex.what() << '\n';
+        return 1;
+    }
+    sout << "unknown exception\n";
+    return 1;
 }
