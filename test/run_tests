@@ -1,0 +1,22 @@
+
+test() {
+    if [[ -d $1 ]]
+    then
+        ./$1/run_tests
+    else
+        ./$1
+    fi
+    
+    if [[ $? != 0 ]]
+    then 
+        echo "****" Failure: $1
+        exit 1
+    fi
+}
+
+cd `dirname $0`
+
+test test1
+test process
+
+exit 0
