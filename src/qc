@@ -3,8 +3,8 @@
 ### Compiler config
 
 QT_DEFINES="-DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB"
-QT_INCPATHS="-I/usr/lib/qt5/mkspecs/cygwin-g++ -I/usr/include/qt5 -I/usr/include/qt5/QtGui -I/usr/include/qt5/QtCore"
-QT_LIBS="-lQt5Gui -lQt5Core -lGL -lpthread"
+QT_INCPATHS="-I/usr/lib/qt5/mkspecs/cygwin-g++ -I/usr/include/qt5 -I/usr/include/qt5/QtGui -I/usr/include/qt5/QtCore -I/usr/include/qt5/QtPrintSupport"
+QT_LIBS="-lQt5Gui -lQt5Core -lQt5PrintSupport -lGL -lpthread"
 
 DEFINES=$QT_DEFINES
 INCPATHS=$QT_INCPATHS
