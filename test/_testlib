@@ -1,9 +1,12 @@
 
 test() {
+
     if [[ -d $1 ]]
     then
-        ./$1/run_tests
+        if [[ $verbose == 1 ]]; then echo directory "$1" ; fi
+        ./$1/_tests
     else
+        if [[ $verbose == 1 ]]; then echo test "$1" ; fi
         ./$1
     fi
     
@@ -14,9 +17,3 @@ test() {
     fi
 }
 
-cd `dirname $0`
-
-test test1
-test test2
-
-exit 0

@@ -1,22 +1,16 @@
+if [[ "$1" == "" ]]
+then
+  echo "usage: run_tests [-v] <path>"
+  echo "  -v   verbose"
+  echo 
+  exit 1
+fi
 
-test() {
-    if [[ -d $1 ]]
-    then
-        ./$1/run_tests
-    else
-        ./$1
-    fi
-    
-    if [[ $? != 0 ]]
-    then 
-        echo "****" Failure: $1
-        exit 1
-    fi
-}
+if [[ $1 == -v ]]; then shift; export verbose=1; fi
 
-cd `dirname $0`
+here=`dirname $0`
+export RUNTEST_ROOT=`readlink -f $here`
 
-test test1
-test process
+$1/_tests
 
-exit 0
+
