@@ -4,7 +4,8 @@
 
 int main()
 {
-    Process f("./sample_source");
+    Process f("grep secret");
+
     execute(f);
     
     return 0;

@@ -3,6 +3,25 @@ source $RUNTEST_ROOT/_testlib
 
 cd `dirname $0`
 
-test test1
-test test2
+run test_exec
 
+#
+# 'input' or 'stdin': 
+#      input comes from a RAM string or from standard input
+#
+# 'pipe' or 'proc':
+#      single process or a pipe of processes
+#
+# 'output' or 'stdout':
+#      output sent to RAM string or to standard output
+#
+
+run  $QC input_pipe_output.cpp
+run test-input_pipe_stdout
+run  $QC input_proc_output.cpp
+run test-input_proc_stdout
+
+run test-stdin_pipe_output
+run test-stdin_pipe_stdout
+run test-stdin_proc_output
+run test-stdin_proc_stdout

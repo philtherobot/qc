@@ -1,0 +1,9 @@
+
+$QC stdin_pipe_output.cpp <<doc
+line 1
+line 2
+the secret is here
+line 4
+and also a secret here
+line 6
+doc
