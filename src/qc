@@ -2,15 +2,29 @@
 
 ### Compiler config
 
+case `hostname` in
+spica) 
+    QT_INCPATHS_PLATFORM=/opt/Qt/5.4/gcc/include
+    QT_MAKESPEC_PLATFORM=/opt/Qt/5.4/gcc/mkspecs/linux-g++
+    # from qmake: -Wl,-O1 -Wl,-rpath,/opt/Qt/5.4/gcc -Wl,-rpath,/opt/Qt/5.4/gcc/lib
+    OPTS_PLATFORM="-fPIE"
+    LFLAGS="-L/opt/Qt/5.4/gcc/lib -Wl,-O1 -Wl,-rpath,/opt/Qt/5.4/gcc -Wl,-rpath,/opt/Qt/5.4/gcc/lib"
+    ;;
+*) 
+    QT_INCPATHS_PLATFORM=/usr/include/qt5
+    QT_MAKESPEC_PLATFORM=/usr/lib/qt5/mkspecs/cygwin-g++
+    ;;
+esac
+
 QT_DEFINES="-DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB"
-QT_INCPATHS="-I/usr/lib/qt5/mkspecs/cygwin-g++ -I/usr/include/qt5 -I/usr/include/qt5/QtGui -I/usr/include/qt5/QtCore -I/usr/include/qt5/QtPrintSupport"
+QT_INCPATHS="-I$QT_MAKESPEC_PLATFORM -I$QT_INCPATHS_PLATFORM -I$QT_INCPATHS_PLATFORM/QtGui -I$QT_INCPATHS_PLATFORM/QtCore -I$QT_INCPATHS_PLATFORM/QtPrintSupport"
 QT_LIBS="-lQt5Gui -lQt5Core -lQt5PrintSupport -lGL -lpthread"
 
-DEFINES=$QT_DEFINES
+DEFINES="-D_REENTRANT $QT_DEFINES"
 INCPATHS=$QT_INCPATHS
 LIBS=$QT_LIBS
 
-OPTS="-Wall -Werror=return-type -std=gnu++11"
+OPTS="-pipe -Wall -W -Werror=return-type -std=gnu++11 $OPTS_PLATFORM"
 
 ## End compiler config
 
@@ -67,10 +81,14 @@ do
         mkdir -p $output_dir
 
         #echo compiling $source...
+
+        gcc_args="-x c++ -c $OPTS $DEFINES $INCPATHS -o $object -"
+        #echo $gcc_args
         if ! ( grep -v '^#!' $source | 
                sed 's/^ *# *pragma *qc_import *(\(.*\))/#include "\1.hpp"/' |
-               g++ -x c++ -c $OPTS $DEFINES $INCPATHS -o $object - )
+               g++ $gcc_args )
         then
+            echo $source failed to compile
             rm -f $object
             exit 1
         fi
@@ -100,7 +118,7 @@ exe=$cache/$hostn/$top_source.executable
 
 if [[ $need_link -ne 0 || ! -e $exe ]]
 then
-    g++ -o $exe ${project[@]} $LIBS
+    g++ $LFLAGS -o $exe ${project[@]} $LIBS
 fi
 
 cd $saved_pwd
