@@ -5,6 +5,7 @@
 
 #include <unistd.h>
 #include <cstdio>
+#include <map>
 
 #include <QString>
 #include <QProcess>
@@ -39,8 +40,26 @@ int InteractiveProcess::stdinClone = -1;
 void throw_if_error(QProcess & proc)
 {
     if( proc.error() != QProcess::UnknownError )
-        throw std::runtime_error("process error");
+    {
+        std::map<QProcess::ProcessError, std::string> e;
+        e[QProcess::FailedToStart] = "failed to start";
+        e[QProcess::Crashed] = "crashed";
+        e[QProcess::Timedout] = "timed out";
+        e[QProcess::WriteError] = "write error";
+        e[QProcess::ReadError] = "read error";
+        throw std::runtime_error("process error: " + e[proc.error()]);
+    }
 }
+
+#if 0
+void dbg(std::string s)
+{
+    std::cout << s;
+    std::cout.flush();
+#else
+void dbg(std::string)
+{}
+#endif
 
 } // anonymous
 
@@ -251,3 +270,118 @@ std::string execapture(std::string input, ProcessList & pipe)
     execute(input, pipe, &ou);
     return ou;
 }
+
+///////////////////////////////////////////////////////////////
+
+ProcessGroup & ProcessGroup::pipe(Command cmd)
+{
+    cmds_.push_back(cmd);
+    return *this;
+}
+
+ProcessGroup & ProcessGroup::istring(std::string i)
+{
+    istring_ = i;
+    return *this;
+}
+
+ProcessGroup & ProcessGroup::ostring(std::string * o)
+{
+    ostring_ = o;
+    return *this;
+}
+
+std::string ProcessGroup::operator() ()
+{
+    if( cmds_.size() == 0 ) return std::string();
+   
+    
+    boost::ptr_vector<QProcess> procs;
+    
+    auto it = cmds_.begin();
+
+    while( it != cmds_.end() )
+    {
+        if( it == cmds_.begin() && ! istring_ )
+        {
+            dbg("use an InteractiveProcess\n");
+            procs.push_back( new InteractiveProcess );
+        }
+        else
+        {
+            dbg("use a QProcess\n");
+            procs.push_back( new QProcess );
+        }
+
+        ++ it;
+    }
+
+    auto pit = procs.begin() + 1;
+    auto pprev = procs.begin();
+    
+    while( pit != procs.end() )
+    {
+        pprev->setStandardOutputProcess( &(*pit) );
+        ++ pit;
+        ++ pprev;
+    }
+
+    if( ! ostring_ )
+    {
+        pprev->setProcessChannelMode(QProcess::ForwardedChannels);
+    }
+    
+    pit = procs.begin();
+    it = cmds_.begin();
+    while( pit != procs.end() )
+    {
+        QString cmd = QString::fromStdString(it->command());
+        pit->start( cmd );
+        throw_if_error(*pit);
+        ++ pit;
+        ++ it;
+    }
+    
+    if( istring_ )
+    {
+        QTextStream s(&procs.front());
+        s << QString::fromStdString( *istring_ );
+        s.flush();
+        procs.front().closeWriteChannel();
+    }
+
+    pit = procs.begin();
+    while( pit != procs.end() )
+    {
+        pit->waitForFinished(-1);
+        throw_if_error(*pit);
+        ++ pit;
+    }
+ 
+    if( ostring_ )
+    {
+        QTextStream s(&procs.back());
+        std::string r = s.readAll().toStdString();
+
+        if( *ostring_ )
+        {
+            **ostring_ = r;
+        }
+
+        return r;
+    }
+
+    return std::string();
+}
+
+///////////////////////////////////////////////////////////////
+
+ProcessGroup exec(Command cmd)
+{
+    ProcessGroup pg;
+    pg.pipe(cmd);
+    return pg;
+}
+
+
+

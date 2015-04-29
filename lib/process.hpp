@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/optional.hpp>
+
 class Process
 {
 public:
@@ -29,52 +31,38 @@ std::string execapture(std::string input, ProcessList & pipe);
 class Command
 {
 public:
-    Command(string cmd);  // implicit!
-    Command(string executable, std::vector<string> args);
+    Command(char const * cmd)  // implicit!
+        : cmd_{cmd} {}
+    Command(std::string cmd)  // implicit!
+        : cmd_{cmd} {}
+    Command(std::string executable, std::vector<std::string> args);
     
-    string 
+    std::string command() const { return cmd_; }
+
+private:
+    std::string cmd_;
 };
 
-class P
+
+class ProcessGroup
 {
 public:
-    P(Command cmd);
     
-    P & pipe(Command cmd);
-    P & input(string in);
-    P & output(string * ou = 0);
-    P & error(string * er);
-    P & merge_error();
+    ProcessGroup & pipe(Command cmd);
+    ProcessGroup & istring(std::string i);
+    ProcessGroup & ostring(std::string * o = 0);
+//    P & error(string * er);
+//    P & merge_error();
     
-    string operator() ();
-    
+    std::string operator() ();
+
 private:
-    string user_input_;  // copy of input
-    string * input_;  // optional, if input was called
-    
-    string local_output_;   // if should capture, but user wants it returned
-    string * output_;  // optional, if we should capture
-    
-    std::vector<Process> pipe_;  // cmd & arguments of each
+    std::vector<Command> cmds_;
+    boost::optional<std::string> istring_;
+    boost::optional<std::string*> ostring_;
 };
 
-P exec(string cmd);
 
-void demo()
-{
-    exec("find .")();
-    
-    string text; // = "line1\nline2\n ... 
-    exec("grep line").input(text)();
-    
-    string r;
-    exec("find .").pipe("grep '*.cpp'").output(r)();
-    
-    /* how to: string r = exec("find .")();
-    can be done by making argument to output optional.
-    if output() was called, then output will be captured
-    and 'operator()' will return a string.  Otherwise,
-    'operator()' always returns an empty string.
-    */
-}
+ProcessGroup exec(Command cmd);
+
 
