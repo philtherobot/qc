@@ -4,29 +4,13 @@
 
 #include <boost/optional.hpp>
 
-class Process
+namespace qc
 {
-public:
-    Process(std::string cmd) : cmd_(cmd) {}
-    
-    std::string cmd() const { return cmd_; }
-    
-private:
-    std::string cmd_;
+
+struct start_error : public std::runtime_error
+{
+    start_error(std::string const & w) : std::runtime_error(w) {}
 };
-
-typedef std::vector<Process> ProcessList;
-
-void execute(Process & p, std::string * output =  0);
-void execute(ProcessList & pipe, std::string * output =  0);
-void execute(std::string input, Process & p, std::string * output =  0);
-void execute(std::string input, ProcessList & pipe, std::string * output =  0);
-
-std::string execapture(Process & p);
-std::string execapture(ProcessList & pipe);
-std::string execapture(std::string input, Process & p);
-std::string execapture(std::string input, ProcessList & pipe);
-
 
 class Command
 {
@@ -49,7 +33,10 @@ class ProcessGroup
 public:
     
     ProcessGroup & pipe(Command cmd);
+
     ProcessGroup & istring(std::string i);
+    ProcessGroup & ifile(std::string i);
+
     ProcessGroup & ostring(std::string * o = 0);
 //    P & error(string * er);
 //    P & merge_error();
@@ -59,10 +46,12 @@ public:
 private:
     std::vector<Command> cmds_;
     boost::optional<std::string> istring_;
+    boost::optional<std::string> ifile_;
     boost::optional<std::string*> ostring_;
 };
 
 
 ProcessGroup exec(Command cmd);
 
+} //qc
 

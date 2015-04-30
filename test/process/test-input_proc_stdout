@@ -1,5 +1,0 @@
-
-r=`$QC input_proc_stdout.cpp`
-
-if [[ $r != "the secret is here" ]]; then exit 1; fi
-exit 0

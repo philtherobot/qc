@@ -1,10 +1,11 @@
 echo line 1: sample data to consume in tests
 echo line 2
 echo line 3
-echo qc now supports shebang.  Because bash\'s shebang support will not allow 
-echo the script interpret to be another script \(in our case, that would be 
+echo qc now supports shebang. Because bash\'s shebang support will not allow
+echo the script interpret to be another script \(in our case, that would be
 echo qc itself\), the syntax is:
 echo
 echo \#!/bin/bash /home/philippe/bin.v2/qc
 echo
 echo last line
+
