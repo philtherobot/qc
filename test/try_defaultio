@@ -1,0 +1,7 @@
+
+r=`$QC defaultio.cpp <<doc
+23
+doc`
+
+if [[ $r != "You typed 23." ]]; then exit 1; fi
+exit 0

@@ -1,6 +1,9 @@
 
-#include <string>
-#include <vector>
+#include <QString>
+#include <QStringList>
+#include <QVector>
+
+#include <stdexcept>
 
 #include <boost/optional.hpp>
 
@@ -9,22 +12,23 @@ namespace qc
 
 struct start_error : public std::runtime_error
 {
-    start_error(std::string const & w) : std::runtime_error(w) {}
+    start_error(QString w) : std::runtime_error(w.toStdString()) {}
 };
 
 class Command
 {
 public:
+	Command() {}
     Command(char const * cmd)  // implicit!
         : cmd_{cmd} {}
-    Command(std::string cmd)  // implicit!
+    Command(QString cmd)  // implicit!
         : cmd_{cmd} {}
-    Command(std::string executable, std::vector<std::string> args);
+    Command(QString executable, QStringList args);
     
-    std::string command() const { return cmd_; }
+    QString command() const { return cmd_; }
 
 private:
-    std::string cmd_;
+    QString cmd_;
 };
 
 
@@ -34,20 +38,20 @@ public:
     
     ProcessGroup & pipe(Command cmd);
 
-    ProcessGroup & istring(std::string i);
-    ProcessGroup & ifile(std::string i);
+    ProcessGroup & istring(QString i);
+    ProcessGroup & ifile(QString i);
 
-    ProcessGroup & ostring(std::string * o = 0);
+    ProcessGroup & ostring(QString * o = 0);
 //    P & error(string * er);
 //    P & merge_error();
     
-    std::string operator() ();
+    QString operator() ();
 
 private:
-    std::vector<Command> cmds_;
-    boost::optional<std::string> istring_;
-    boost::optional<std::string> ifile_;
-    boost::optional<std::string*> ostring_;
+    QVector<Command> cmds_;
+    boost::optional<QString> istring_;
+    boost::optional<QString> ifile_;
+    boost::optional<QString*> ostring_;
 };
 
 

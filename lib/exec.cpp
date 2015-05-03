@@ -1,11 +1,12 @@
 
 #include "exec.hpp"
 
-#include <iostream>
+#pragma qc_import(defaultio)
 
-#include <unistd.h>
 #include <cstdio>
 #include <map>
+#include <string>
+#include <unistd.h>
 
 #include <QString>
 #include <QProcess>
@@ -48,7 +49,7 @@ void throw_if_error(QProcess & proc)
 
         case QProcess::FailedToStart:
         {
-            std::string p = proc.program().toStdString();
+            QString p = proc.program();
             throw start_error("failed to start '" + p + "'");
         }
 
@@ -65,13 +66,13 @@ void throw_if_error(QProcess & proc)
 }
 
 #if 0
-void dbg(std::string s)
+void dbg(QString s)
 {
-    std::cout << s;
-    std::cout.flush();
+    dout << s;
+    dout.flush();
 }
 #else
-void dbg(std::string)
+void dbg(QString)
 {}
 #endif
 
@@ -84,29 +85,29 @@ ProcessGroup & ProcessGroup::pipe(Command cmd)
     return *this;
 }
 
-ProcessGroup & ProcessGroup::istring(std::string i)
+ProcessGroup & ProcessGroup::istring(QString i)
 {
     istring_ = i;
-    ifile_ = boost::optional<std::string>();
+    ifile_ = boost::optional<QString>();
     return *this;
 }
 
-ProcessGroup & ProcessGroup::ifile(std::string i)
+ProcessGroup & ProcessGroup::ifile(QString i)
 {
     ifile_ = i;
-    istring_ = boost::optional<std::string>();
+    istring_ = boost::optional<QString>();
     return *this;
 }
 
-ProcessGroup & ProcessGroup::ostring(std::string * o)
+ProcessGroup & ProcessGroup::ostring(QString * o)
 {
     ostring_ = o;
     return *this;
 }
 
-std::string ProcessGroup::operator() ()
+QString ProcessGroup::operator() ()
 {
-    if( cmds_.size() == 0 ) return std::string();
+    if( cmds_.size() == 0 ) return QString();
    
     
     boost::ptr_vector<QProcess> procs;
@@ -148,18 +149,16 @@ std::string ProcessGroup::operator() ()
     if( ifile_ )
     {
         dbg("input from file " + *ifile_ + "\n");
-        QString fname = QString::fromStdString(*ifile_);
-        procs.front().setStandardInputFile( fname );
+        procs.front().setStandardInputFile( *ifile_ );
     }
         
     pit = procs.begin();
     it = cmds_.begin();
     while( pit != procs.end() )
     {
-        std::string cmd { it->command() };
+        QString cmd { it->command() };
         dbg( "command '" + cmd + "'\n" );
-        QString qcmd { QString::fromStdString(cmd) };
-        pit->start( qcmd );
+        pit->start( cmd );
         throw_if_error(*pit);
         ++ pit;
         ++ it;
@@ -169,7 +168,7 @@ std::string ProcessGroup::operator() ()
     {
         dbg("feeding string input\n");
         QTextStream s(&procs.front());
-        s << QString::fromStdString( *istring_ );
+        s << *istring_;
         s.flush();
         procs.front().closeWriteChannel();
     }
@@ -186,7 +185,7 @@ std::string ProcessGroup::operator() ()
     {
         dbg("capturing output\n");
         QTextStream s(&procs.back());
-        std::string r = s.readAll().toStdString();
+        QString r = s.readAll();
 
         if( *ostring_ )
         {
@@ -196,7 +195,7 @@ std::string ProcessGroup::operator() ()
         return r;
     }
 
-    return std::string();
+    return QString();
 }
 
 ///////////////////////////////////////////////////////////////

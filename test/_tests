@@ -3,5 +3,6 @@ source $RUNTEST_ROOT/_testlib
 
 cd `dirname $0`
 
+run try_defaultio
 run exec
 
