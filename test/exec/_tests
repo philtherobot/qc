@@ -7,4 +7,4 @@ run              simple_exec
 run              use_stdin
 run $QC case.cpp start_failure
 run $QC case.cpp cases_without_external_script
-
+run $QC case.cpp file_output

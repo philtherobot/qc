@@ -13,7 +13,6 @@
 #include <QTextStream>
 
 using namespace qc;
-//using namespace std;
 
 
 QString secret_text {
@@ -120,9 +119,25 @@ void file_input()
 
 void file_output()
 {
- //   QString fname = ;
+	QString fname;
+	{
+		QTemporaryFile tf;
+		tf.open(); tf.close();
 
-   // exec("grep secret").istring(secret_text).ofile(fname)();
+		fname = tf.fileName();
+	}
+
+    exec("grep secret").istring(secret_text).ofile(fname)();
+
+    QFile fl(fname);
+    fl.open(QIODevice::ReadOnly);
+    QString o = fl.readAll();
+
+    QString expect {
+        "the secret is here\n"
+        "and also a secret here\n"};
+
+    utAssertTrue( o == expect );
 }
 
 void cases_without_external_script()
@@ -149,6 +164,7 @@ int main(int argc, char ** argv)
     else if( arg == "start_failure"                 ) start_failure();
     else if( arg == "cases_without_external_script" ) cases_without_external_script();
     else if( arg == "use_stdin"                     ) use_stdin();
+    else if( arg == "file_output"                   ) file_output();
 
     return 0;
 }

@@ -102,6 +102,14 @@ ProcessGroup & ProcessGroup::ifile(QString i)
 ProcessGroup & ProcessGroup::ostring(QString * o)
 {
     ostring_ = o;
+    ofile_ = boost::optional<QString>();
+    return *this;
+}
+
+ProcessGroup & ProcessGroup::ofile(QString o)
+{
+    ofile_ = o;
+    ostring_ = boost::optional<QString*>();
     return *this;
 }
 
@@ -140,7 +148,13 @@ QString ProcessGroup::operator() ()
         ++ pprev;
     }
 
-    if( ! ostring_ )
+    if( ostring_ )
+    {}
+    else if( ofile_ )
+    {
+    	pprev->setStandardOutputFile(*ofile_);
+    }
+    else
     {
         dbg("forward channels to stdout\n");
         pprev->setProcessChannelMode(QProcess::ForwardedChannels);

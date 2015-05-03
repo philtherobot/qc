@@ -42,6 +42,7 @@ public:
     ProcessGroup & ifile(QString i);
 
     ProcessGroup & ostring(QString * o = 0);
+    ProcessGroup & ofile(QString o);
 //    P & error(string * er);
 //    P & merge_error();
     
@@ -52,6 +53,7 @@ private:
     boost::optional<QString> istring_;
     boost::optional<QString> ifile_;
     boost::optional<QString*> ostring_;
+    boost::optional<QString> ofile_;
 };
 
 
