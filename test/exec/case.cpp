@@ -2,6 +2,7 @@
 
 #pragma qc_import(../../lib/exec)
 #pragma qc_import(../../lib/unit_test)
+#pragma qc_import(../../lib/defaultio)
 
 #include <cstdlib>
 #include <cstring>
@@ -81,6 +82,25 @@ void capture_stdout()
     utAssertTrue( o == expect );
 }
 
+void capture_stderr()
+{
+    QString o;
+    QString e;
+    exec("./error_script").estring(&e).ostring(&o)();
+
+    QString o_expect{
+        "This is on stdout\n"
+        "Back on stdout\n"};
+
+    utAssertTrue( o == o_expect );
+
+    QString e_expect{
+        "This is on stderr\n"
+        "On stderr again\n"};
+
+    utAssertTrue( e == e_expect );
+}
+
 void feed_stdin()
 {
     QString o;
@@ -140,13 +160,57 @@ void file_output()
     utAssertTrue( o == expect );
 }
 
+void file_error()
+{
+	QString ofname;
+	{
+		QTemporaryFile tf;
+		tf.open(); tf.close();
+
+		ofname = tf.fileName();
+	}
+
+	QString efname;
+	{
+		QTemporaryFile tf;
+		tf.open(); tf.close();
+
+		efname = tf.fileName();
+	}
+
+    exec("./error_script").efile(efname).ofile(ofname)();
+
+    QFile ofl(ofname);
+    ofl.open(QIODevice::ReadOnly);
+    QString o = ofl.readAll();
+
+    QString o_expect {
+        "This is on stdout\n"
+        "Back on stdout\n"};
+
+    utAssertTrue( o == o_expect );
+
+    QFile efl(efname);
+    efl.open(QIODevice::ReadOnly);
+    QString e = efl.readAll();
+
+    QString e_expect {
+        "This is on stderr\n"
+        "On stderr again\n"};
+
+    utAssertTrue( e == e_expect );
+}
+
 void cases_without_external_script()
 {
-    capture_stdout();
+	start_failure();
+	capture_stdout();
+    capture_stderr();
     feed_stdin();
     pipe();
     file_input();
     file_output();
+    file_error();
 }
 
 void use_stdin()
@@ -161,10 +225,8 @@ int main(int argc, char ** argv)
     QString arg = argv[1];
 
          if( arg == "simple_exec"                   ) simple_exec();
-    else if( arg == "start_failure"                 ) start_failure();
     else if( arg == "cases_without_external_script" ) cases_without_external_script();
     else if( arg == "use_stdin"                     ) use_stdin();
-    else if( arg == "file_output"                   ) file_output();
 
     return 0;
 }

@@ -1,0 +1,4 @@
+echo This is on stdout
+echo This is on stderr 1>&2
+echo Back on stdout
+echo On stderr again 1>&2

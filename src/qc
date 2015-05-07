@@ -89,6 +89,7 @@ do
                g++ $gcc_args )
         then
             echo $source failed to compile
+            echo command: g++ $gcc_args
             rm -f $object
             exit 1
         fi
@@ -102,14 +103,15 @@ do
     for s in "${imported_sources[@]}"
     do
         s=$(readlink -f $s)
-        to_compile=(${to_compile[@]} $s)
-        # If two (or more) sources import the same
-        # source, then we could check a file more than once.
-        # But we will compile it at most once.
-        # Hopefully, it appearing more than once in 
-        # $project will not affect the link.
-        # Worst case: two sources importing each other.
-        # We would get in an infinite loop.
+        
+        found=0
+        for t in "${to_compile[@]}"
+        do
+        	if [[ $t == $s ]] ; then found=1; fi
+        done
+        if [[ found -eq 0 ]]; then
+        	to_compile=(${to_compile[@]} $s)
+        fi
     done
 
 done
@@ -118,7 +120,13 @@ exe=$cache/$hostn/$top_source.executable
 
 if [[ $need_link -ne 0 || ! -e $exe ]]
 then
-    g++ $LFLAGS -o $exe ${project[@]} $LIBS
+	gcc_args="$LFLAGS -o $exe ${project[@]} $LIBS"
+    if ! g++ $gcc_args
+    then
+    	echo failed to link
+    	echo command: g++ $gcc_args
+    	exit 1
+    fi
 fi
 
 cd $saved_pwd

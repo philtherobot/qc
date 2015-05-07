@@ -1,7 +1,11 @@
 
-#include <cstdio>
-
 #include <QTextStream>
 
-QTextStream dout(stdout);
-QTextStream din(stdin);
+namespace qc
+{
+
+extern QTextStream dout;
+extern QTextStream din;
+extern QTextStream derr;
+
+}

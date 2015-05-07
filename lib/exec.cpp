@@ -113,6 +113,20 @@ ProcessGroup & ProcessGroup::ofile(QString o)
     return *this;
 }
 
+ProcessGroup & ProcessGroup::estring(QString * e)
+{
+    estring_ = e;
+    efile_ = boost::optional<QString>();
+    return *this;
+}
+
+ProcessGroup & ProcessGroup::efile(QString e)
+{
+    efile_ = e;
+    estring_ = boost::optional<QString*>();
+    return *this;
+}
+
 QString ProcessGroup::operator() ()
 {
     if( cmds_.size() == 0 ) return QString();
@@ -148,6 +162,9 @@ QString ProcessGroup::operator() ()
         ++ pprev;
     }
 
+
+    bool fwd_out = false;
+
     if( ostring_ )
     {}
     else if( ofile_ )
@@ -156,10 +173,34 @@ QString ProcessGroup::operator() ()
     }
     else
     {
-        dbg("forward channels to stdout\n");
-        pprev->setProcessChannelMode(QProcess::ForwardedChannels);
+    	fwd_out = true;
+    }
+
+
+    bool fwd_err = false;
+
+    if( estring_ )
+    {}
+    else if( efile_ )
+    {
+    	pprev->setStandardErrorFile(*efile_);
+    }
+    else
+    {
+    	fwd_err = true;
+    }
+
+    if( fwd_out || fwd_err )
+    {
+    	QProcess::ProcessChannelMode mode = QProcess::ForwardedChannels;
+
+    	if(   fwd_out && ! fwd_err )  mode = QProcess::ForwardedOutputChannel;
+    	if( ! fwd_out &&   fwd_err )  mode = QProcess::ForwardedErrorChannel;
+
+        pprev->setProcessChannelMode(mode);
     }
     
+
     if( ifile_ )
     {
         dbg("input from file " + *ifile_ + "\n");
@@ -194,22 +235,39 @@ QString ProcessGroup::operator() ()
         throw_if_error(*pit);
         ++ pit;
     }
- 
+
+    QString retval;
+
     if( ostring_ )
     {
-        dbg("capturing output\n");
-        QTextStream s(&procs.back());
+        dbg("capturing stdout\n");
+        QProcess & back_proc = procs.back();
+        back_proc.setReadChannel(QProcess::StandardOutput);
+        QTextStream s(&back_proc);
         QString r = s.readAll();
-
         if( *ostring_ )
         {
             **ostring_ = r;
         }
 
-        return r;
+        retval = r;
     }
 
-    return QString();
+    if( estring_ )
+    {
+        dbg("capturing stderr\n");
+        QProcess & back_proc = procs.back();
+        back_proc.setReadChannel(QProcess::StandardError);
+        QTextStream s(&back_proc);
+        QString r = s.readAll();
+
+        if( *estring_ )
+        {
+            **estring_ = r;
+        }
+    }
+
+    return retval;
 }
 
 ///////////////////////////////////////////////////////////////

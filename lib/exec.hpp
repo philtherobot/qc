@@ -43,8 +43,12 @@ public:
 
     ProcessGroup & ostring(QString * o = 0);
     ProcessGroup & ofile(QString o);
-//    P & error(string * er);
-//    P & merge_error();
+
+    ProcessGroup & estring(QString * e = 0);
+    ProcessGroup & efile(QString e);
+
+    //    P & merge_error();
+    // exit_code(int *);
     
     QString operator() ();
 
@@ -54,6 +58,8 @@ private:
     boost::optional<QString> ifile_;
     boost::optional<QString*> ostring_;
     boost::optional<QString> ofile_;
+    boost::optional<QString*> estring_;
+    boost::optional<QString> efile_;
 };
 
 
