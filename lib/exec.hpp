@@ -50,7 +50,7 @@ public:
     //    P & merge_error();
     // exit_code(int *);
     
-    QString operator() ();
+    int operator() ();
 
 private:
     QVector<Command> cmds_;

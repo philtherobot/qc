@@ -59,8 +59,7 @@ void start_failure()
 void capture_stdout()
 {
     QString o;
-    QString p;
-    p = exec("./sample_source").ostring(&o)();
+    exec("./sample_source").ostring(&o)();
 
     QString expect{
         "line 1: sample data to consume in tests\n"
@@ -73,11 +72,6 @@ void capture_stdout()
         "#!/bin/bash /home/philippe/bin.v2/qc\n"
         "\n"
         "last line\n"};
-
-    utAssertTrue( o == expect );
-    utAssertTrue( p == expect );
-
-    o = exec("./sample_source").ostring()();
 
     utAssertTrue( o == expect );
 }
@@ -116,7 +110,7 @@ void feed_stdin()
 void pipe()
 {
     QString o;
-    o = exec("./sample_source").pipe("grep line").pipe("wc").ostring()();
+    exec("./sample_source").pipe("grep line").pipe("wc").ostring(&o)();
 
     utAssertTrue( o == "      4      14      64\n" );
 }
@@ -128,7 +122,7 @@ void file_input()
     QString iname = create_tmp_file(secret_text, i);
 
     QString o;
-    o = exec("grep secret").ifile(iname).ostring()();
+    exec("grep secret").ifile(iname).ostring(&o)();
 
     QString expect {
         "the secret is here\n"
@@ -201,6 +195,12 @@ void file_error()
     utAssertTrue( e == e_expect );
 }
 
+void exit_code()
+{
+	utAssertTrue( 0 == exec("true")() );
+	utAssertTrue( 1 == exec("false")() );
+}
+
 void cases_without_external_script()
 {
 	start_failure();
@@ -211,6 +211,7 @@ void cases_without_external_script()
     file_input();
     file_output();
     file_error();
+    exit_code();
 }
 
 void use_stdin()

@@ -127,9 +127,9 @@ ProcessGroup & ProcessGroup::efile(QString e)
     return *this;
 }
 
-QString ProcessGroup::operator() ()
+int ProcessGroup::operator() ()
 {
-    if( cmds_.size() == 0 ) return QString();
+    if( cmds_.size() == 0 ) return 0;
    
     
     boost::ptr_vector<QProcess> procs;
@@ -228,15 +228,27 @@ QString ProcessGroup::operator() ()
         procs.front().closeWriteChannel();
     }
 
+    int code = 0;
+
     pit = procs.begin();
     while( pit != procs.end() )
     {
         pit->waitForFinished(-1);
+
+        if( pit->exitStatus() != QProcess::NormalExit )
+        {
+        	throw std::runtime_error("process crashed");
+        }
+
         throw_if_error(*pit);
+
+        int c = pit->exitCode();
+        if( code == 0 && c != 0 ) code = c;
+
         ++ pit;
     }
 
-    QString retval;
+    if( code != 0 ) return code;
 
     if( ostring_ )
     {
@@ -249,8 +261,6 @@ QString ProcessGroup::operator() ()
         {
             **ostring_ = r;
         }
-
-        retval = r;
     }
 
     if( estring_ )
@@ -267,7 +277,7 @@ QString ProcessGroup::operator() ()
         }
     }
 
-    return retval;
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////
