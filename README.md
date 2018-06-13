@@ -38,6 +38,8 @@ Quicksee can be used to:
 - GNU C++
 - Bash shell
 - Unix environment (Linux or cygwin are examples)
+- sed program
+- hostname program
 
 
 ## Configuration

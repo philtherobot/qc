@@ -9,7 +9,7 @@ then
 fi
 
 verbose=
-if [[ "$1" == "-v" ]]
+if [[ "${1}" == "-v" ]]
 then 
     shift 1
     verbose=1
@@ -19,17 +19,17 @@ function trace
 {
     if [[ -n "${verbose}" ]]
     then
-        echo trace: $*
+        echo trace: ${*}
     fi
 }
 
 function error
 {
-    (>&2 echo error: $*)
+    (>&2 echo error: ${*})
     exit 1
 }
 
-source="$(readlink -f "$1")"  # absolute path
+source="$(readlink -f "${1}")"  # absolute path
 source_basename=$(basename "${source}")
 
 shift 1
@@ -69,7 +69,7 @@ do
     inclusions=($(sed -n 's/^ *\# *include *\"\(.*\)\"/\1/p' "${d}"))
     IFS=${OLDIFS}
 
-    if [[ $? -ne 0 ]]
+    if [[ ${?} -ne 0 ]]
     then
         error failure checking dependencies
         exit 1
@@ -118,4 +118,4 @@ then
     g++ -o "${exe}" "${object}" ${LIBS}
 fi
 
-"${exe}" "$@"
+"${exe}" "${@}"
