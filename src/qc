@@ -1,126 +1,115 @@
 #!/usr/bin/env bash
 
-### Compiler config
+source "$HOME/.qc/config.sh"
 
-case `hostname` in
-spica) 
-    QT_INCPATHS_PLATFORM=/opt/Qt/5.4/gcc/include
-    QT_MAKESPEC_PLATFORM=/opt/Qt/5.4/gcc/mkspecs/linux-g++
-    # from qmake: -Wl,-O1 -Wl,-rpath,/opt/Qt/5.4/gcc -Wl,-rpath,/opt/Qt/5.4/gcc/lib
-    OPTS_PLATFORM="-fPIE"
-    LFLAGS="-L/opt/Qt/5.4/gcc/lib -Wl,-O1 -Wl,-rpath,/opt/Qt/5.4/gcc -Wl,-rpath,/opt/Qt/5.4/gcc/lib"
-    ;;
-*) 
-    QT_INCPATHS_PLATFORM=/usr/include/qt5
-    QT_MAKESPEC_PLATFORM=/usr/lib/qt5/mkspecs/cygwin-g++
-    ;;
-esac
+verbose=
+if [[ "$1" == "-v" ]]
+then 
+    shift 1
+    verbose=1
+fi
 
-QT_DEFINES="-DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB"
-QT_INCPATHS="-I$QT_MAKESPEC_PLATFORM -I$QT_INCPATHS_PLATFORM -I$QT_INCPATHS_PLATFORM/QtGui -I$QT_INCPATHS_PLATFORM/QtCore -I$QT_INCPATHS_PLATFORM/QtPrintSupport"
-QT_LIBS="-lQt5Gui -lQt5Core -lQt5PrintSupport -lGL -lpthread"
+function trace
+{
+    if [[ -n "$verbose" ]]
+    then
+        echo trace: $*
+    fi
+}
 
-DEFINES="-D_REENTRANT $QT_DEFINES"
-INCPATHS=$QT_INCPATHS
-LIBS=$QT_LIBS
+function error
+{
+    (>&2 echo error: $*)
+    exit 1
+}
 
-OPTS="-pipe -Wall -W -Werror=return-type -std=gnu++11 $OPTS_PLATFORM"
-
-## End compiler config
-
-
-top_source=$(readlink -f $1)
+source="$(readlink -f "$1")"  # absolute path
+source_basename=$(basename "$source")
 
 shift 1
 
-saved_pwd=$PWD
+saved_pwd="$PWD"
 
-cache=~/.qc/cache
+cache_dir="$HOME/.qc/cache/$(hostname)/$source"
+# cache is based on hostname and absolute path of source file
+trace cache directory = $cache_dir
 
-hostn=`hostname`
+object="$cache_dir/$source_basename.o"
 
-project=()
-to_compile=($top_source)
+changed=0
 
-need_link=0
+declare -a dependencies=("$source")
 
-while [ ${#to_compile[@]} -ne 0 ]
+while [[ ${#dependencies[@]} -ne 0 ]]
 do
-    source=${to_compile[0]}
-    to_compile=(${to_compile[@]:1})
+    # Debug stack of dependencies
+    if [[ -n "$verbose" ]] ; then declare -p dependencies; fi
 
-    #echo handling $source
+    # Pop first element
+    d="${dependencies[0]}"
+    dependencies=("${dependencies[@]:1}")
 
-    imports=(`sed -n 's/^ *# *pragma *qc_import *(\(.*\))/\1/p' $source`)
-    imported_sources=(${imports[@]/%/.cpp})
-    imported_headers=(${imports[@]/%/.hpp})
+    trace checking up to date $d
 
-    headers_dquote=(`sed -n 's/^ *# *include *\"\(.*\)\"/\1/p' $source`)
-
-    headers=(${imported_headers[@]} ${headers_dquote[@]})
-
-    object=$cache/$hostn/$source.o
-
-    cd $(dirname $source)
-
-    changed=0
-    if [ $source -nt $object ]
-    then changed=1
-    else
-        for h in "${headers[@]}"
-        do
-            if [ $h -nt $object ]; then changed=1; break; fi
-        done
-    fi
-
-    if [ $changed -ne 0 ]
+    if [[ "$d" -nt "$object" ]]
     then
-        #opts=$(sed -n 's/^ *# *pragma *qc_gcc *(\(.*\))/\1/p' $pgm)
-
-        output_dir=$(dirname $object)
-        mkdir -p $output_dir
-
-        #echo compiling $source...
-
-        gcc_args="-x c++ -c $OPTS $DEFINES $INCPATHS -o $object -"
-        #echo $gcc_args
-        if ! ( grep -v '^#!' $source | 
-               sed 's/^ *# *pragma *qc_import *(\(.*\))/#include "\1.hpp"/' |
-               g++ $gcc_args )
-        then
-            echo $source failed to compile
-            rm -f $object
-            exit 1
-        fi
-
-        need_link=1
-
+        changed=1
+        break
     fi
 
-    project=(${project[@]} $object)
+    declare -a inclusions
+    OLDIFS=$IFS
+    IFS=$'\n'
+    inclusions=($(sed -n 's/^ *\# *include *\"\(.*\)\"/\1/p' "$d"))
+    IFS=$OLDIFS
 
-    for s in "${imported_sources[@]}"
+    if [[ $? -ne 0 ]]
+    then
+        error failure checking dependencies
+        exit 1
+    fi
+
+    # Debug newly found dependencies
+    if [[ -n "$verbose" ]] ; then declare -p inclusions; fi
+
+    cd "$(dirname "$d")" # So that includes are relative to the file location
+
+    while [[ ${#inclusions[@]} -ne 0 ]]
     do
-        s=$(readlink -f $s)
-        to_compile=(${to_compile[@]} $s)
-        # If two (or more) sources import the same
-        # source, then we could check a file more than once.
-        # But we will compile it at most once.
-        # Hopefully, it appearing more than once in 
-        # $project will not affect the link.
-        # Worst case: two sources importing each other.
-        # We would get in an infinite loop.
-    done
+        # Pop first element
+        i="${inclusions[0]}"
+        inclusions=("${inclusions[@]:1}")
 
+        dependencies+=("$(readlink -f "$i")")
+    done
 done
 
-exe=$cache/$hostn/$top_source.executable
 
-if [[ $need_link -ne 0 || ! -e $exe ]]
+cd "$saved_pwd"
+
+
+if [[ $changed -ne 0 ]]
 then
-    g++ $LFLAGS -o $exe ${project[@]} $LIBS
+    trace compiling $source...
+
+    mkdir -p "$cache_dir"
+
+    if ! ( grep -v '^#!' "$source" | g++ -x c++ -c $OPTS $DEFINES $INCPATHS -o "$object" - )
+    then
+        rm -f "$object"
+        exit 1
+    fi
+
+    need_link=1
+
 fi
 
-cd $saved_pwd
-$exe $*
+exe="$cache_dir/$source_basename.executable"
 
+if [[ $need_link -ne 0 || ! -e "$exe" ]]
+then
+    trace linking $exe...
+    g++ -o "$exe" "$object" $LIBS
+fi
+
+"$exe" "$@"

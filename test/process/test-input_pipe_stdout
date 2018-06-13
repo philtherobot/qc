@@ -1,5 +1,0 @@
-
-r=`$QC input_pipe_stdout.cpp`
-
-if [[ $r != 9 ]]; then exit 1; fi
-exit 0

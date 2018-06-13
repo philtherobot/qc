@@ -1,5 +1,0 @@
-
-r=`$QC exec.cpp | wc -w`
-
-if [[ $r != 45 ]]; then exit 1; fi
-exit 0
