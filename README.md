@@ -33,9 +33,16 @@ Quicksee can be used to:
 - Write small utility programs and scripts you use daily.  You might accumulate a small library of useful tools that make this easier.
 
 
+## Requirements
+
+- GNU C++
+- Bash shell
+- Unix environment (Linux or cygwin are examples)
+
+
 ## Configuration
 
-Quicksee finds its configuration (if any) in the `.qc` directory located in the user's home directory.  There, it reads a shell script file named `config.sh`.
+Quicksee finds its configuration (if any) in the `.quicksee` directory located in the user's home directory.  There, it reads a shell script file named `config.sh`.
 
 The expectation from Quicksee of this script is that it will export the following environment variables:
 
@@ -60,10 +67,12 @@ Quicksee can only build programs made of a single *compilation unit*: one source
 
 Quicksee links to *all* the libraries listed in the configuration.  Quicksee relies on the linker to drop unused identifiers.
 
+Your script will receive the arguments the users gave on the command-line when the script was invoked.  But the very first one, argument zero, which is usually the script's filename, will not be correct.  Argument zero will be the cached executable filename.  There is no workaround at this time.
+
 
 ## How does it work?
 
-Quicksee compiles the program using GNU g++.  The intermediary file (.o) and  executable file are stored in a cache located in the `.qc/cache` directory in the user's home directory.  The cache is keyed by the hostname and the absolute filepath of the source file.
+Quicksee compiles the program using GNU g++.  The intermediary file (.o) and  executable file are stored in a cache located in the `.quicksee/cache` directory in the user's home directory.  The cache is keyed by the hostname and the absolute filepath of the source file.
 
 Quicksee actually performs a dependency test on the `#include` directives found in the source files.  Only the files included *with double quotes* are considered for dependency checking.  Files included with less-than and greater-that are considered to be "system" headers that do not change.
 
@@ -82,3 +91,4 @@ Quicksee has a single option: "-v" for verbose/debug execution.
 - Find or write a small companion library that makes it easy to do things that are already easy in shell scripting: launching subprocesses, piping to/from them, manipulating environment variables, etc.
 - Make the configuration format YAML or some such rather than a shell script.  It could be very constraining that the configuration is a shell script if the implementation of Quicksee were to change from Bash to say, C++.
 - Add tests.
+- Try to spoof argument zero.  Or offer a library that the program can use to recover the script's filename.  Or place the filename in an environment variable such as `QUICKSEE_SCRIPT`.

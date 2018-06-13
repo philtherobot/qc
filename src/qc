@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
-source "$HOME/.qc/config.sh"
+configroot="$HOME/.quicksee"
+
+configfile="$configroot/config.sh"
+if [[ -e "$configfile" ]]
+then
+    source "$configfile"
+fi
 
 verbose=
 if [[ "$1" == "-v" ]]
@@ -30,7 +36,7 @@ shift 1
 
 saved_pwd="$PWD"
 
-cache_dir="$HOME/.qc/cache/$(hostname)/$source"
+cache_dir="$configroot/cache/$(hostname)/$source"
 # cache is based on hostname and absolute path of source file
 trace cache directory = $cache_dir
 
@@ -104,7 +110,7 @@ then
 
 fi
 
-exe="$cache_dir/$source_basename.executable"
+exe="$cache_dir/executable"
 
 if [[ $need_link -ne 0 || ! -e "$exe" ]]
 then
