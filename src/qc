@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-configroot="$HOME/.quicksee"
+configroot="${HOME}/.quicksee"
 
-configfile="$configroot/config.sh"
-if [[ -e "$configfile" ]]
+configfile="${configroot}/config.sh"
+if [[ -e "${configfile}" ]]
 then
-    source "$configfile"
+    source "${configfile}"
 fi
 
 verbose=
@@ -17,7 +17,7 @@ fi
 
 function trace
 {
-    if [[ -n "$verbose" ]]
+    if [[ -n "${verbose}" ]]
     then
         echo trace: $*
     fi
@@ -30,44 +30,44 @@ function error
 }
 
 source="$(readlink -f "$1")"  # absolute path
-source_basename=$(basename "$source")
+source_basename=$(basename "${source}")
 
 shift 1
 
-saved_pwd="$PWD"
+saved_pwd="${PWD}"
 
-cache_dir="$configroot/cache/$(hostname)/$source"
+cache_dir="${configroot}/cache/$(hostname)/${source}"
 # cache is based on hostname and absolute path of source file
-trace cache directory = $cache_dir
+trace cache directory = ${cache_dir}
 
-object="$cache_dir/$source_basename.o"
+object="${cache_dir}/${source_basename}.o"
 
 changed=0
 
-declare -a dependencies=("$source")
+declare -a dependencies=("${source}")
 
 while [[ ${#dependencies[@]} -ne 0 ]]
 do
     # Debug stack of dependencies
-    if [[ -n "$verbose" ]] ; then declare -p dependencies; fi
+    if [[ -n "${verbose}" ]] ; then declare -p dependencies; fi
 
     # Pop first element
     d="${dependencies[0]}"
     dependencies=("${dependencies[@]:1}")
 
-    trace checking up to date $d
+    trace checking up to date ${d}
 
-    if [[ "$d" -nt "$object" ]]
+    if [[ "${d}" -nt "${object}" ]]
     then
         changed=1
         break
     fi
 
     declare -a inclusions
-    OLDIFS=$IFS
+    OLDIFS=${IFS}
     IFS=$'\n'
-    inclusions=($(sed -n 's/^ *\# *include *\"\(.*\)\"/\1/p' "$d"))
-    IFS=$OLDIFS
+    inclusions=($(sed -n 's/^ *\# *include *\"\(.*\)\"/\1/p' "${d}"))
+    IFS=${OLDIFS}
 
     if [[ $? -ne 0 ]]
     then
@@ -76,9 +76,9 @@ do
     fi
 
     # Debug newly found dependencies
-    if [[ -n "$verbose" ]] ; then declare -p inclusions; fi
+    if [[ -n "${verbose}" ]] ; then declare -p inclusions; fi
 
-    cd "$(dirname "$d")" # So that includes are relative to the file location
+    cd "$(dirname "${d}")" # So that includes are relative to the file location
 
     while [[ ${#inclusions[@]} -ne 0 ]]
     do
@@ -86,23 +86,23 @@ do
         i="${inclusions[0]}"
         inclusions=("${inclusions[@]:1}")
 
-        dependencies+=("$(readlink -f "$i")")
+        dependencies+=("$(readlink -f "${i}")")
     done
 done
 
 
-cd "$saved_pwd"
+cd "${saved_pwd}"
 
 
-if [[ $changed -ne 0 ]]
+if [[ ${changed} -ne 0 ]]
 then
-    trace compiling $source...
+    trace compiling ${source}...
 
-    mkdir -p "$cache_dir"
+    mkdir -p "${cache_dir}"
 
-    if ! ( grep -v '^#!' "$source" | g++ -x c++ -c $OPTS $DEFINES $INCPATHS -o "$object" - )
+    if ! ( grep -v '^#!' "${source}" | g++ -x c++ -c ${OPTS} ${DEFINES} ${INCPATHS} -o "${object}" - )
     then
-        rm -f "$object"
+        rm -f "${object}"
         exit 1
     fi
 
@@ -110,12 +110,12 @@ then
 
 fi
 
-exe="$cache_dir/executable"
+exe="${cache_dir}/executable"
 
-if [[ $need_link -ne 0 || ! -e "$exe" ]]
+if [[ ${need_link} -ne 0 || ! -e "${exe}" ]]
 then
-    trace linking $exe...
-    g++ -o "$exe" "$object" $LIBS
+    trace linking ${exe}...
+    g++ -o "${exe}" "${object}" ${LIBS}
 fi
 
-"$exe" "$@"
+"${exe}" "$@"
