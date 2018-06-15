@@ -42,4 +42,4 @@ x.hpp
 x space.hpp
 sub directory/x space.hpp"
 
-CHECK_EQUAL "${output}" "${expected}" "program output is wrong"
+CHECK_OUTPUT "${output}" "${expected}"

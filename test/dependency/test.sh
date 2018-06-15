@@ -19,7 +19,7 @@ EOF
 
 output="$(qc pgm.cpp)"
 CHECK_EXIT_STATUS_OK
-CHECK_EQUAL "${output}" "Hello world!" "program output is wrong"
+CHECK_OUTPUT "${output}" "Hello world!"
 
 delay_for_fs
 
@@ -29,4 +29,4 @@ EOF
 
 output="$(qc pgm.cpp)"
 CHECK_EXIT_STATUS_OK
-CHECK_EQUAL "${output}" "A different greeting." "program output is wrong"
+CHECK_OUTPUT "${output}" "A different greeting."

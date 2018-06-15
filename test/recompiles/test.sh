@@ -13,7 +13,7 @@ EOF
 
 output="$(qc pgm.cpp)"
 CHECK_EXIT_STATUS_OK
-CHECK_EQUAL "${output}" "version 1" "program output is wrong"
+CHECK_OUTPUT "${output}" "version 1"
 
 delay_for_fs
 
@@ -28,4 +28,4 @@ EOF
 
 output="$(qc pgm.cpp)"
 CHECK_EXIT_STATUS_OK
-CHECK_EQUAL "${output}" "version 2" "program output is wrong"
+CHECK_OUTPUT "${output}" "version 2"

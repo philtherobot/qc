@@ -11,11 +11,14 @@ function err
 export -f err
 
 
-function CHECK_EQUAL
+function CHECK_OUTPUT
 {
-    if [[ "${1}" != "${2}" ]]; then err ${3} ; fi
+    if [[ "${1}" != "${2}" ]]
+    then 
+        err script output is not what is expected \(\"${1}\" != \"${2}\"\)
+    fi
 }
-export -f CHECK_EQUAL
+export -f CHECK_OUTPUT
 
 
 function CHECK_EXIT_STATUS_OK
