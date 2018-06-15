@@ -11,13 +11,13 @@
 which_qc="$(which qc)"
 if [[ ${?} -ne 0 ]]
 then
-    err unable to locate qc script
+    error_and_exit unable to locate qc script
 fi
 
 expr="$(sed -n "s/    inclusions=(\$(sed -n '\(.*\)' \"\${d}\"))/\1/p" "${which_qc}")"
 if [[ ${?} -ne 0 || -z "${expr}" ]]
 then
-    err unable to extract sed expression from qc script
+    error_and_exit unable to extract sed expression from qc script
 fi
 
 output=$(sed -n "${expr}" <<EOF
@@ -32,7 +32,7 @@ EOF
 
 if [[ ${?} -ne 0 ]]
 then
-    err non-zero exit status on sed during test
+    error_and_exit non-zero exit status on sed during test
 fi
 
 expected="x.hpp

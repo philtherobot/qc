@@ -3,19 +3,27 @@
 shopt -s nullglob
 
 
-function err
+function error_and_exit
 {
     echo error: ${*}
     exit 1
 }
-export -f err
+export -f error_and_exit
+
+
+function check_failed
+{
+    echo failure: ${*}
+    exit 2
+}
+export -f check_failed
 
 
 function CHECK_OUTPUT
 {
     if [[ "${1}" != "${2}" ]]
     then 
-        err script output is not what is expected \(\"${1}\" != \"${2}\"\)
+        check_failed script output is not what is expected \(\"${1}\" != \"${2}\"\)
     fi
 }
 export -f CHECK_OUTPUT
@@ -23,14 +31,20 @@ export -f CHECK_OUTPUT
 
 function CHECK_EXIT_STATUS_OK
 {
-    if [[ ${?} -ne 0 ]]; then err exit status non-zero; fi
+    if [[ ${?} -ne 0 ]]
+    then
+        check_failed exit status non-zero
+    fi
 }
 export -f CHECK_EXIT_STATUS_OK
 
 
 function CHECK_EXIT_STATUS
 {
-    if [[ ${?} -ne ${1} ]]; then err exit status is not ${1}; fi
+    if [[ ${?} -ne ${1} ]]
+    then
+        check_failed exit status is not ${1}
+    fi
 }
 export -f CHECK_EXIT_STATUS
 
