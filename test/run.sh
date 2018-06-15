@@ -92,6 +92,7 @@ echo There were ${nbfailures} failures.
 
 
 # TODO
+# when running tests, should we not skip the user's configuration?
 # include dependencies OK (one and more levels down)
 # include file with a space
 # running from dir A a script in dir B which includes relative to itself
