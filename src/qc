@@ -66,7 +66,7 @@ do
     declare -a inclusions
     OLDIFS=${IFS}
     IFS=$'\n'
-    inclusions=($(sed -n 's/^ *\# *include *\"\(.*\)\"/\1/p' "${d}"))
+    inclusions=($(sed -n 's/^ *\# *include *"\(.*\)"/\1/p' "${d}"))
     IFS=${OLDIFS}
 
     if [[ ${?} -ne 0 ]]

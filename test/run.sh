@@ -32,9 +32,10 @@ function CHECK_EXIT_STATUS
 export -f CHECK_EXIT_STATUS
 
 
-# We compile/modify/compile program in quick sequence
+# We compile/modify/compile scripts in quick sequence
 # and sometimes the filesystem records the same file
-# modification time.
+# modification time.  Use this delay to workaround
+# the problem.
 function delay_for_fs
 {
     sleep 1.0s
@@ -76,4 +77,4 @@ echo There were ${nbfailures} failures.
 # TODO
 # include dependencies OK (one and more levels down)
 # include file with a space
-# running from dir A a program in dir B which includes relative to itself
+# running from dir A a script in dir B which includes relative to itself

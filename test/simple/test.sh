@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Simple program, everything works.
+# Simple script, everything works.
 
 cat >pgm.cpp <<EOF
 #include <iostream>

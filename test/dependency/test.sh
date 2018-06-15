@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Simple program, everything works.
+# Check that a simple dependency on a header causes
+# recompilation when the header changes.
 
 cat >pgm.cpp <<EOF
 #include <iostream>

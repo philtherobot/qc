@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# That changing the program recompiles it.
+# That changing the script causes it to be recompiled.
 
 cat >pgm.cpp <<EOF
 #include <iostream>
