@@ -55,7 +55,8 @@ export -f CHECK_EXIT_STATUS
 # the problem.
 function delay_for_fs
 {
-    sleep 1.0s
+    # Both Linux and Cygwin seem happy with 1sec.
+    sleep 1s
 }
 export -f delay_for_fs
 
