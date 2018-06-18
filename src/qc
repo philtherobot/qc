@@ -8,12 +8,28 @@ then
     source "${configfile}"
 fi
 
-verbose=
-if [[ "${1}" == "-v" ]]
-then 
-    shift 1
-    verbose=1
-fi
+positional=()
+while [[ ${#} -gt 0 ]]
+do
+    case "${1}" in
+        -f)
+        force_compile=1
+        shift
+        ;;
+
+        -v) 
+        verbose=1 
+        shift
+        ;;
+
+        *)
+        positional+=("${1}")
+        shift
+        ;;
+    esac
+done
+
+set -- "${positional[@]}" # restore positional parameters
 
 function trace
 {
@@ -42,11 +58,10 @@ trace cache directory = ${cache_dir}
 
 object="${cache_dir}/${source_basename}.o"
 
-changed=0
 
 declare -a dependencies=("${source}")
 
-while [[ ${#dependencies[@]} -ne 0 ]]
+while [[ ${#dependencies[@]} -ne 0  &&  -z "${force_compile}" ]]
 do
     # Debug stack of dependencies
     if [[ -n "${verbose}" ]] ; then declare -p dependencies; fi
@@ -94,7 +109,10 @@ done
 cd "${saved_pwd}"
 
 
-if [[ ${changed} -ne 0 ]]
+exe="${cache_dir}/executable"
+
+
+if [[ -n "${changed}"  ||  -n "${force_compile}" ]]
 then
     trace compiling ${source}...
 
@@ -106,14 +124,6 @@ then
         exit 1
     fi
 
-    need_link=1
-
-fi
-
-exe="${cache_dir}/executable"
-
-if [[ ${need_link} -ne 0 || ! -e "${exe}" ]]
-then
     trace linking ${exe}...
     g++ -o "${exe}" "${object}" ${LIBS}
 fi
