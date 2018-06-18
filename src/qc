@@ -31,6 +31,7 @@ done
 
 set -- "${positional[@]}" # restore positional parameters
 
+
 function trace
 {
     if [[ -n "${verbose}" ]]
@@ -44,6 +45,14 @@ function error
     (>&2 echo error: ${*})
     exit 1
 }
+
+
+####
+#### Main
+####
+
+
+export QUICKSEE_SCRIPT="${1}"
 
 source="$(readlink -f "${1}")"  # absolute path
 source_basename=$(basename "${source}")

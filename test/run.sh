@@ -81,13 +81,19 @@ do
         then
             echo OK
         else
-            echo !!!! Failed !!!!
             let nbfailures++
         fi
     fi
 done
 
 echo
+
+if [[ ${nbfailures} -ne 0 ]]
+then
+    echo '=====> FAILURE! <====='
+    echo
+fi
+
 echo Ran ${nbtests} tests.
 echo There were ${nbfailures} failures.
 

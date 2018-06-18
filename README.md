@@ -69,12 +69,17 @@ Quicksee can only build scripts made of a single *compilation unit*: one source 
 
 Quicksee links to *all* the libraries listed in the configuration whether your script needs them or not.  Quicksee relies on the linker to drop unused identifiers.
 
-Your script will receive the arguments the user gave on the command-line when the script was invoked.  But the very first one, argument zero, which is usually the script's filename, will not be correct.  Argument zero will be the cached executable filename.  There is no workaround at this time.
+Your script will receive the arguments the user gave on the command-line when the script was invoked.  But the very first one, argument zero, which is usually the script's filename, will not be correct.  Argument zero will be the cached executable filename.  A workaround is to read the `QUICKSEE_SCRIPT` environment variable that has been setup for the executing program.  The variable contains the filepath of the script given to the `qc` command.
 
 Quicksee uses the file modification times to verify if the script needs to be recompiled.  Because file times have limited precision (which depends on a variety of factors), if a compilation-modification-dependency check cycle is done very quickly, the dependency check could fail and declare that the file was not changed.  This can occur in scenarios of scripts being launch by another script very quickly.  For example, if a main script generates a sub script based on some input and launches it, the source file will be compiled and its cached executable will have a file modification time equal to the time of compilation.  In this scenario, the main script, upon return of the sub script, rewrites the sub script to something different.  If the main script accomplished this quickly enough that the new sub script has the same file modification time as the cached executable, then Quicksee's dependency will fail by declaring that the cache is up to date.  To workaround this:
 - Make the main script wait for at least your file system's time precision.
 - Change the source file's name at every generation, or every X generation (like "f1" to "f10" then cycle back).
-- Future: since the main script knows it changed the source file, it could launch it with the (yet to be) "force compilation" option.
+- Since the main script knows it changed the source file, it could launch it with the "force compilation" option (-f).
+
+Quicksee cannot reliably handle multiple invokations of the same script at the same time that would result in a compilation.  The mutiple executing `qc` executing will all try to compile the cached executable and write to the same output file at the same time which will cause a compilation failure.  Possible workaround are:
+- Maybe you can handle/ignore a failure like this from time to time.  
+- Ensuring the cached executable is up to date before launching the multiprocessing system.  Future: use the "compile only" option update the cache.
+- Future: the cache's implementation may become safe of multiple writers and make this problem completely go away.
 
 
 ## How does it work?
@@ -88,7 +93,20 @@ The "is up to date" check is performed by comparing file modification times.
 
 ## Options
 
-Quicksee has a single option: "-v" for verbose/debug execution.  
+
+### Force compilation `-f`
+
+Quicksee will not perform an "up to date" check and will compile the script unconditionally prior to executing it normally.
+
+
+### Verbosity/debug `-v`
+
+Quicksee will output a log of its execution.  It is not truly useful for users other than Quicksee's developers.  Still, it is available and it might help somebody troubleshoot some issue.
+
+
+## Environment
+
+Quicksee sets up an environment variable named `QUICKSEE_SCRIPT`.  This variable is accessible from the script when it executes.  `QUICKSEE_SCRIPT` contains the filepath to the script.
 
 
 ## Future
@@ -96,8 +114,8 @@ Quicksee has a single option: "-v" for verbose/debug execution.
 - Add an option to compile the executable and place it in the current directory.
 - Automatically prune the cache to control its size.  Maybe options for the user to control its maximum size?
 - Manual pruning of the cache.
-- Option to force recompilation.
 - Find or write a small companion library that makes it easy to do things that are already easy in shell scripting: launching subprocesses, piping to/from them, manipulating environment variables, etc.
 - Make the configuration format YAML or some such rather than a shell script.  It could be very constraining that the configuration is a shell script if the implementation of Quicksee were to change from Bash to say, C++.
-- Add tests.
-- Try to spoof argument zero.  Or offer a library that the script can use to recover the script's filename.  Or place the filename in an environment variable such as `QUICKSEE_SCRIPT`.
+- Try to spoof argument zero.  Or offer a library that the script can use to recover the script's filename.
+- Add a "compile only" option.
+- Make the cache safe for multiple writers.
