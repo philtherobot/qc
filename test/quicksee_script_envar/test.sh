@@ -34,4 +34,4 @@ CHECK_OUTPUT "${output}" "${abspath}"
 cd ..
 output="$(qc quicksee_script_envar/pgm.cpp)"
 CHECK_EXIT_STATUS_OK
-CHECK_OUTPUT "${output}" "quicksee_script_envar/pgm.cp"
+CHECK_OUTPUT "${output}" "quicksee_script_envar/pgm.cpp"

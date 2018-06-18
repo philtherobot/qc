@@ -8,6 +8,18 @@ then
     source "${configfile}"
 fi
 
+
+function show_help
+{
+    echo "Usage: $(basename ${0}) [options] script"
+    echo 'Quicksee, script-like programming in C++.'
+    echo 
+    echo '-f  force compilation of script'
+    echo '-v  verbose execution'
+    exit 0
+}
+
+
 positional=()
 while [[ ${#} -gt 0 ]]
 do
@@ -20,6 +32,10 @@ do
         -v) 
         verbose=1 
         shift
+        ;;
+
+        -h)
+        show_help
         ;;
 
         *)
@@ -51,6 +67,11 @@ function error
 #### Main
 ####
 
+
+if [[ -z "${1}" ]]
+then
+    error no script file specified
+fi
 
 export QUICKSEE_SCRIPT="${1}"
 
