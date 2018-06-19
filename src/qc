@@ -15,6 +15,7 @@ function show_help
     echo 'Quicksee, script-like programming in C++.'
     echo 
     echo '-f  force compilation of script'
+    echo '-u  make cache up to date, but do not execute'
     echo '-v  verbose execution'
     exit 0
 }
@@ -26,6 +27,11 @@ do
     case "${1}" in
         -f)
         force_compile=1
+        shift
+        ;;
+
+        -u)
+        update=1
         shift
         ;;
 
@@ -86,7 +92,7 @@ cache_dir="${configroot}/cache/$(hostname)/${source}"
 # cache is based on hostname and absolute path of source file
 trace cache directory = ${cache_dir}
 
-object="${cache_dir}/${source_basename}.o"
+exe="${cache_dir}/executable"
 
 
 declare -a dependencies=("${source}")
@@ -102,7 +108,7 @@ do
 
     trace checking up to date ${d}
 
-    if [[ "${d}" -nt "${object}" ]]
+    if [[ "${d}" -nt "${exe}" ]]
     then
         changed=1
         break
@@ -139,23 +145,34 @@ done
 cd "${saved_pwd}"
 
 
-exe="${cache_dir}/executable"
-
-
 if [[ -n "${changed}"  ||  -n "${force_compile}" ]]
 then
     trace compiling ${source}...
 
     mkdir -p "${cache_dir}"
 
+    object="${cache_dir}/${source_basename}.o"
+
     if ! ( grep -v '^#!' "${source}" | g++ -x c++ -c ${OPTS} ${DEFINES} ${INCPATHS} -o "${object}" - )
     then
+        trace compilation failure
         rm -f "${object}"
+        rm -f "${exe}"
         exit 1
     fi
 
     trace linking ${exe}...
-    g++ -o "${exe}" "${object}" ${LIBS}
+    if ! g++ -o "${exe}" "${object}" ${LIBS}
+    then
+        trace link failure
+        rm -f "${object}"
+        rm -f "${exe}"
+        exit 1
+    fi
 fi
 
-"${exe}" "${@}"
+if [[ -z "${update}" ]]
+then
+    "${exe}" "${@}"
+fi
+

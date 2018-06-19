@@ -71,6 +71,11 @@ export OPTS="-Wall -std=gnu++11"
 Quicksee will not perform an "up to date" check and will compile the script unconditionally prior to executing it normally.
 
 
+### Update `-u`
+
+Quicksee will ensure the cached executable is up to date with the sources like usual but will not launch the script.  This option is useful to ensure the next launch will be quick.
+
+
 ### Verbosity/debug `-v`
 
 Quicksee will output a log of its execution.  It is not truly useful for users other than Quicksee's developers.  Still, it is available and it might help somebody troubleshoot some issue.
@@ -105,7 +110,7 @@ Quicksee uses the file modification times to verify if the script needs to be re
 
 Quicksee cannot reliably handle multiple invocations of the same script at the same time that would result in a compilation.  The mutiple executing `qc` invocations will all try to compile the cached executable and write to the same output file at the same time which will cause a compilation failure.  Possible workaround are:
 - Do nothing: maybe you can handle/ignore a failure like this from time to time.  
-- Ensuring the cached executable is up to date before launching the multiprocessing system.  Future: use the "compile only" option to update the cache.
+- Use the update option (-u) to ensure the cached executable is up to date before launching the multiprocessing system.
 - Future: the cache's implementation may become safe of multiple writers and make this problem completely go away.
 
 
@@ -113,11 +118,11 @@ Quicksee cannot reliably handle multiple invocations of the same script at the s
 
 ### Important
 
-- Add a "compile only" option.
 - Find or write a small companion library that makes it easy to do things that are already easy in shell scripting: launching subprocesses, piping to/from them, manipulating environment variables, etc.
 
 ### Wishes
 
+- Detect invalid options yet support scripts starting with dash.
 - Add an option to compile the executable and place it in the current directory.
 - Automatically prune the cache to control its size.  Maybe options for the user to control its maximum size?  Maybe simply a manual pruning of the cache the user has to launch?
 - Make the configuration format YAML or some such rather than a shell script.  It could be very constraining that the configuration is a shell script if the implementation of Quicksee were to change from Bash to say, C++.
